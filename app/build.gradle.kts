@@ -12,8 +12,18 @@ android {
         applicationId = "it.mastro.provalettura"
         minSdk = 28          // Android 9 o più recente
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1-prova"
+        versionCode = 2
+        versionName = "0.2-prova"
+    }
+
+    // Chiave di firma fissa: così ogni nuova versione si installa sopra la precedente.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("prova-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     compileOptions {
