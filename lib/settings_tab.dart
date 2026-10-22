@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'editors.dart';
 import 'home.dart' show fixPermissions;
 import 'models.dart';
+import 'prova_lettore.dart';
 import 'store.dart';
 import 'ui.dart';
 
@@ -117,6 +118,20 @@ class SettingsTab extends StatelessWidget {
           child: MutedText('Tipi di turno: orari e anticipo della sveglia', size: 14),
         ),
         const TypesList(),
+
+        _section('TurniRSP (prova)'),
+        AppCard(
+          padding: const EdgeInsets.fromLTRB(18, 6, 10, 6),
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.document_scanner_outlined, color: Palette.primary),
+            title: const Text('Prova lettura foglio', style: TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: const Text('Fotografa il foglio dei garagisti e guarda cosa legge l\'app'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context)
+                .push(MaterialPageRoute<void>(builder: (_) => const ProvaLettorePage())),
+          ),
+        ),
 
         _section('Profilo'),
         AppCard(

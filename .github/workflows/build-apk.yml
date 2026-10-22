@@ -2,7 +2,7 @@ name: Compila APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, turnirsp]
   workflow_dispatch:
 
 permissions:
@@ -62,9 +62,21 @@ jobs:
           path: Turnista.apk
 
       - name: Pubblica come "ultima versione"
+        if: github.ref_name == 'main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Turnista ${{ github.run_number }}
           make_latest: true
+          files: Turnista.apk
+
+      # Le versioni di prova di TurniRSP escono a parte, senza toccare l'"ultima versione" di Turnista.
+      - name: Pubblica versione di prova TurniRSP
+        if: github.ref_name == 'turnirsp'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: turnirsp-${{ github.run_number }}
+          name: TurniRSP prova ${{ github.run_number }}
+          prerelease: true
+          make_latest: false
           files: Turnista.apk
