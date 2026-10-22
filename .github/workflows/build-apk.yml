@@ -36,11 +36,26 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Test logica turni
-        run: flutter test
+        run: |
+          set -o pipefail
+          flutter test 2>&1 | tee test_out.txt
         continue-on-error: true
 
       - name: Compila
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+        run: |
+          set -o pipefail
+          flutter build apk --release --build-number=${{ github.run_number }} 2>&1 | tee build_out.txt
+
+      # Riassunto leggibile dall'API di GitHub (i log completi non sono sempre accessibili).
+      - name: Riassunto
+        if: always()
+        run: |
+          if [ -f test_out.txt ]; then
+            echo "::notice title=Test::$(tail -c 3000 test_out.txt | grep -E 'tests passed|Some tests failed|letto|Expected|Actual|Error' | tail -40 | tr '\n' '|' )"
+          fi
+          if [ -f build_out.txt ] && grep -qiE 'error|failed' build_out.txt; then
+            echo "::error title=Compilazione::$(grep -iE 'error|failed|what went wrong|e: ' -A2 build_out.txt | head -60 | tr '\n' '|' )"
+          fi
 
       # Firma sempre con la stessa chiave, così gli aggiornamenti si installano sopra la versione vecchia.
       - name: Firma
