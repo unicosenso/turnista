@@ -42,7 +42,8 @@ Lettura normalizza(String testo) {
   var punteggio = 0.5;
   for (final s in _maiuscole.keys) {
     final r = somiglianza(alt, s);
-    if (r >= punteggio && (migliore == null || r > punteggio)) {
+    // a pari somiglianza vince la sigla "alfabeticamente più grande", come nel prototipo
+    if (r >= punteggio && (migliore == null || r > punteggio || s.compareTo(migliore) > 0)) {
       migliore = s;
       punteggio = r;
     }
