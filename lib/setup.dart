@@ -70,7 +70,7 @@ class _SetupFlowState extends State<SetupFlow> with WidgetsBindingObserver {
             child: const Icon(Icons.alarm, color: Colors.white, size: 40),
           ),
           const SizedBox(height: 24),
-          _title('Benvenuto in Turnista',
+          _title('Benvenuto in TurniRSP',
               'I tuoi turni sempre sotto controllo, e una sveglia che si regola da sola in base al turno.'),
           TextField(
             controller: nameCtrl,

@@ -22,7 +22,7 @@ class TurnistaApp extends StatelessWidget {
     return StoreScope(
       store: store,
       child: MaterialApp(
-        title: 'Turnista',
+        title: 'TurniRSP',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
         locale: const Locale('it', 'IT'),

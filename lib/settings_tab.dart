@@ -91,7 +91,7 @@ class SettingsTab extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(6, 10, 6, 0),
           child: MutedText(
             'Su alcuni telefoni (Xiaomi, Huawei, Oppo…) conviene anche togliere le restrizioni '
-            'della batteria per Turnista e attivare l\'avvio automatico, così la sveglia '
+            'della batteria per TurniRSP e attivare l\'avvio automatico, così la sveglia '
             'torna attiva da sola dopo un riavvio.',
             size: 13,
           ),
@@ -205,7 +205,7 @@ class SettingsTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        const Center(child: MutedText('Turnista 1.0 · i dati restano solo sul telefono', size: 13)),
+        const Center(child: MutedText('TurniRSP 0.1 · by Mastro · i dati restano solo sul telefono', size: 13)),
       ],
     );
   }

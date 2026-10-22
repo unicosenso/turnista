@@ -12,7 +12,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:label="Turnista"
+        android:label="TurniRSP"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

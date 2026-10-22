@@ -29,6 +29,14 @@ jobs:
       - name: Prepara progetto Android
         run: flutter create --platforms=android --org eu.mastriani --project-name turnista .
 
+      # Sul ramo turnirsp l'app è un'altra: nome e identificativo propri, si installa accanto a Turnista.
+      - name: Identità TurniRSP
+        if: github.ref_name == 'turnirsp'
+        run: |
+          G=$(ls android/app/build.gradle* | head -1)
+          sed -i 's/applicationId *=\? *"eu.mastriani.turnista"/applicationId = "eu.mastriani.turnirsp"/' "$G"
+          grep -n applicationId "$G"
+
       - name: Dipendenze
         run: flutter pub get
 
@@ -87,6 +95,10 @@ jobs:
           files: Turnista.apk
 
       # Le versioni di prova di TurniRSP escono a parte, senza toccare l'"ultima versione" di Turnista.
+      - name: Nome APK TurniRSP
+        if: github.ref_name == 'turnirsp'
+        run: cp Turnista.apk TurniRSP.apk
+
       - name: Pubblica versione di prova TurniRSP
         if: github.ref_name == 'turnirsp'
         uses: softprops/action-gh-release@v2
@@ -95,4 +107,4 @@ jobs:
           name: TurniRSP prova ${{ github.run_number }}
           prerelease: true
           make_latest: false
-          files: Turnista.apk
+          files: TurniRSP.apk
