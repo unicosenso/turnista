@@ -46,16 +46,17 @@ jobs:
           set -o pipefail
           flutter build apk --release --build-number=${{ github.run_number }} 2>&1 | tee build_out.txt
 
-      # Riassunto leggibile dall'API di GitHub (i log completi non sono sempre accessibili).
+      # Copia gli ultimi messaggi di test e compilazione nel ramo "ci-log", leggibile da remoto.
       - name: Riassunto
-        if: always()
+        if: always() && github.ref_name != 'main'
         run: |
-          if [ -f test_out.txt ]; then
-            echo "::notice title=Test::$(tail -c 3000 test_out.txt | grep -E 'tests passed|Some tests failed|letto|Expected|Actual|Error' | tail -40 | tr '\n' '|' )"
-          fi
-          if [ -f build_out.txt ] && grep -qiE 'error|failed' build_out.txt; then
-            echo "::error title=Compilazione::$(grep -iE 'error|failed|what went wrong|e: ' -A2 build_out.txt | head -60 | tr '\n' '|' )"
-          fi
+          mkdir -p /tmp/log && cd /tmp/log
+          [ -f "$GITHUB_WORKSPACE/test_out.txt" ] && tail -c 20000 "$GITHUB_WORKSPACE/test_out.txt" > test.txt
+          [ -f "$GITHUB_WORKSPACE/build_out.txt" ] && tail -c 20000 "$GITHUB_WORKSPACE/build_out.txt" > build.txt
+          git init -q && git checkout -q -b ci-log
+          git config user.name ci && git config user.email ci@users.noreply.github.com
+          git add -A && git commit -qm "log run ${{ github.run_number }}" || true
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-log
 
       # Firma sempre con la stessa chiave, così gli aggiornamenti si installano sopra la versione vecchia.
       - name: Firma
