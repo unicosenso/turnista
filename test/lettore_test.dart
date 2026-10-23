@@ -47,15 +47,19 @@ void main() {
   test('sigle: correzioni tipiche', () {
     expect(normalizza('M1').toString(), 'M1');
     expect(normalizza('Mi').toString(), 'M1?');
-    expect(normalizza('PO').toString(), 'P0?');
     expect(normalizza('INT.2').toString(), 'INT2');
     expect(normalizza('').sigla, '');
     expect(dividi('CONP1'), ['CON', 'P1']);
     expect(dividi('M1'), null);
+    expect(dividi('CONCONr'), ['CON', 'CON', 'r']);
+    expect(dividi('CONCONP'), ['CON', 'CON', 'P']);
+    expect(dividi('rls'), null);
+    expect(normalizza('PO').toString(), 'P0');
   });
 
   test('foglio in bacheca (gennaio)', () => confronta('bacheca'));
   test('foglio sul tavolo (settembre)', () => confronta('settembre'));
+  test('foglio di agosto (prima riga senza data, sigle attaccate)', () => confronta('agosto'));
 
   test('pixel: riconosce una "r" e ignora le linee della tabella', () {
     // Immagine finta 200x100 bianca, con una linea orizzontale e una "r" disegnata a mano.

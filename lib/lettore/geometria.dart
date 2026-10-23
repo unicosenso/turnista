@@ -88,9 +88,15 @@ List<_Parola> _preparaParole(List<ParolaLetta> lette) {
     final x0 = xs.reduce(math.min), x1 = xs.reduce(math.max);
     final parti = eSigla(w.testo) ? null : dividi(w.testo);
     if (parti != null) {
-      final xm = x0 + (x1 - x0) * parti[0].length / w.testo.length;
-      out.add(_Parola(parti[0], (x0 + xm) / 2, cy, x0, xm));
-      out.add(_Parola(parti[1], (xm + x1) / 2, cy, xm, x1));
+      // si divide il riquadro in proporzione alla lunghezza delle sigle
+      final tot = parti.fold<int>(0, (a, p) => a + p.length);
+      var pos = 0;
+      for (final p in parti) {
+        final xa = x0 + (x1 - x0) * pos / tot;
+        pos += p.length;
+        final xb = x0 + (x1 - x0) * pos / tot;
+        out.add(_Parola(p, (xa + xb) / 2, cy, xa, xb));
+      }
     } else {
       out.add(_Parola(w.testo, cx, cy, x0, x1));
     }
@@ -276,7 +282,12 @@ TabellaLetta? leggiTabella(List<ParolaLetta> lette) {
   final parole = _preparaParole(lette);
   final dateG = _trovaDate(parole);
   if (dateG.length < 5) return null;
-  final primo = dateG.map((e) => e.key).reduce((a, c) => a.isBefore(c) ? a : c);
+  // Il foglio va sempre da un lunedì a una domenica: se la prima o l'ultima data non si
+  // sono lette, si allarga lo stesso a settimane intere (le righe mancanti si ricostruiscono).
+  var primo = dateG.map((e) => e.key).reduce((a, c) => a.isBefore(c) ? a : c);
+  primo = primo.subtract(Duration(days: primo.weekday - 1));
+  var ultimo = dateG.map((e) => e.key).reduce((a, c) => a.isAfter(c) ? a : c);
+  ultimo = ultimo.add(Duration(days: 7 - ultimo.weekday));
   var date = [for (final e in dateG) MapEntry(e.key.difference(primo).inDays, e.value)];
   final ks = date.map((d) => d.key.toDouble()).toList(), yd = date.map((d) => d.value.y).toList();
   var r = _retta(ks, yd);
@@ -288,7 +299,7 @@ TabellaLetta? leggiTabella(List<ParolaLetta> lette) {
   final b = r[0];
   if (b <= 0) return null;
   date = [for (var i = 0; i < date.length; i++) if (buone[i]) date[i]];
-  final ngiorni = ks.reduce(math.max).toInt() + 1;
+  final ngiorni = ultimo.difference(primo).inDays + 1;
   // Giorni la cui data non si è letta: un'etichetta "finta" a metà tra le vicine.
   final presenti = {for (final d in date) d.key: d.value};
   final fineMediana = _mediana(presenti.values.map((w) => w.x1).toList());
@@ -310,7 +321,8 @@ TabellaLetta? leggiTabella(List<ParolaLetta> lette) {
   }
   date.sort((a, c) => a.key.compareTo(c.key));
   final fineDate = date.map((d) => d.value.x1).reduce(math.max);
-  final yMin = yd.reduce(math.min) - 0.6 * b, yMax = yd.reduce(math.max) + 0.6 * b;
+  final tutteY = date.map((d) => d.value.y);
+  final yMin = tutteY.reduce(math.min) - 0.6 * b, yMax = tutteY.reduce(math.max) + 0.6 * b;
   final etichette = date.map((d) => d.value).toSet();
   final cand = parole
       .where((w) => w.x0 > fineDate - 5 && w.y > yMin && w.y < yMax + 0.2 * b && !etichette.contains(w))
