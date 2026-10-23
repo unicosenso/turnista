@@ -324,8 +324,19 @@ TabellaLetta? leggiTabella(List<ParolaLetta> lette) {
   final tutteY = date.map((d) => d.value.y);
   final yMin = tutteY.reduce(math.min) - 0.6 * b, yMax = tutteY.reduce(math.max) + 0.6 * b;
   final etichette = date.map((d) => d.value).toSet();
+  // Una parola fa parte della tabella se sta a destra dell'etichetta della SUA riga
+  // (non di tutte: con la foto storta le etichette in basso finiscono più a sinistra).
+  double fineEtichetta(double y) {
+    var vicina = date.first.value;
+    for (final d in date) {
+      if ((d.value.y - y).abs() < (vicina.y - y).abs()) vicina = d.value;
+    }
+    return vicina.t.isEmpty ? fineDate : vicina.x1;
+  }
+
   final cand = parole
-      .where((w) => w.x0 > fineDate - 5 && w.y > yMin && w.y < yMax + 0.2 * b && !etichette.contains(w))
+      .where((w) =>
+          w.y > yMin && w.y < yMax + 0.2 * b && w.x0 > fineEtichetta(w.y) - 5 && !etichette.contains(w))
       .toList();
   if (cand.isEmpty) return null;
 
