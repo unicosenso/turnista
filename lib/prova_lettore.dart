@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'lettore/da_foto.dart';
 import 'lettore/lettore_foglio.dart';
@@ -72,6 +73,17 @@ class _ProvaLettorePageState extends State<ProvaLettorePage> {
             ),
           if (_esito?.errore != null)
             AppCard(color: Palette.errorBg, child: Text(_esito!.errore!, style: const TextStyle(fontSize: 15))),
+          if (_esito?.foto != null && _esito?.dati != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: OutlinedButton.icon(
+                onPressed: () => Share.shareXFiles(
+                    [XFile(_esito!.foto!, mimeType: 'image/jpeg'), XFile(_esito!.dati!, mimeType: 'application/json')],
+                    subject: 'TurniRSP: foto e dati letti'),
+                icon: const Icon(Icons.share_outlined),
+                label: const Text('Invia foto e dati (per controllo)'),
+              ),
+            ),
           if (f != null) ...[
             _Riepilogo(foglio: f, ms: _esito!.millisecondi),
             const SizedBox(height: 12),

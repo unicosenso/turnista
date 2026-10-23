@@ -2,6 +2,7 @@
 // senza internet) e passa il risultato al lettore. I lavori pesanti girano in un "isolate",
 // cioè in parallelo, così l'app non si blocca mentre legge.
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -16,16 +17,19 @@ class EsitoLettura {
   final FoglioLetto? foglio;
   final String? errore;
   final int millisecondi;
-  const EsitoLettura({this.foglio, this.errore, required this.millisecondi});
+  final String? foto; // la foto esattamente come l'ha vista ML Kit
+  final String? dati; // le parole lette, per studiarle al computer
+  const EsitoLettura({this.foglio, this.errore, required this.millisecondi, this.foto, this.dati});
 }
 
-/// Raddrizza la foto secondo come era tenuto il telefono e, se è enorme, la rimpicciolisce.
+/// Raddrizza la foto secondo come era tenuto il telefono. La si rimpicciolisce solo se è
+/// davvero enorme: ML Kit legge meglio le sigle piccole a piena risoluzione.
 /// Restituisce la foto pronta (in JPEG, per ML Kit) e i suoi pixel (per il controllo delle caselle).
 Map<String, Object> _preparaImmagine(Uint8List byte) {
   var foto = im.decodeImage(byte);
   if (foto == null) throw const FormatException('Foto non leggibile');
   foto = im.bakeOrientation(foto);
-  const massimo = 3200;
+  const massimo = 4096;
   if (math.max(foto.width, foto.height) > massimo) {
     foto = foto.width >= foto.height ? im.copyResize(foto, width: massimo) : im.copyResize(foto, height: massimo);
   }
@@ -67,12 +71,33 @@ Future<EsitoLettura> leggiFotoFoglio(String percorso) async {
       'h': pronta['h']!,
       'rgb': pronta['rgb']!,
     });
+    // Si salvano anche le parole lette, nello stesso formato della vecchia app di prova.
+    final datiFile = File('${Directory.systemTemp.path}/foglio_dati.json');
+    await datiFile.writeAsString(jsonEncode({
+      'app': 'TurniRSP',
+      'passate': [
+        {
+          'rotazione': 0,
+          'larghezza': pronta['w'],
+          'altezza': pronta['h'],
+          'parole': [
+            for (final w in parole)
+              {
+                't': w.testo,
+                'angoli': [for (final p in w.angoli) [p.x.round(), p.y.round()]],
+              },
+          ],
+        },
+      ],
+    }));
     if (foglio == null) {
       return EsitoLettura(
           errore: 'Non trovo le date del foglio turni. Prova con una foto più dritta e più vicina.',
-          millisecondi: ms());
+          millisecondi: ms(),
+          foto: tmp.path,
+          dati: datiFile.path);
     }
-    return EsitoLettura(foglio: foglio, millisecondi: ms());
+    return EsitoLettura(foglio: foglio, millisecondi: ms(), foto: tmp.path, dati: datiFile.path);
   } catch (e) {
     return EsitoLettura(errore: 'Errore durante la lettura: $e', millisecondi: ms());
   } finally {
