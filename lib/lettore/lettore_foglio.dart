@@ -123,5 +123,49 @@ FoglioLetto? leggiFoglio(List<ParolaLetta> parole, Immagine img) {
       }
     });
   }
+  // 4) Caselle dubbie con una sigla a metà ("M" senza numero): si propone la sigla della stessa
+  // lettera la cui forma, in questa foto, somiglia di più. Resta comunque da controllare.
+  if (hc > 0) {
+    final perSigla = <String, List<List<double>>>{};
+    final glifi = <(int, int), List<double>>{};
+    final reSigla = RegExp(r'^[MPN][0-3]$'), reDubbia = RegExp(r'^([MPN][0-3]|PR)$');
+    for (var k = 0; k < t.giorni.length; k++) {
+      for (var j = 0; j < t.colonne; j++) {
+        final l = celle[k][j];
+        final utile = l.sicura ? reSigla.hasMatch(l.sigla) : reDubbia.hasMatch(l.sigla);
+        if (!utile) continue;
+        final cx0 = t.colonneX[j][k];
+        final g = cifra(img, cx0, t.rigaY(k, cx0 + 0.3 * b), b, hc);
+        if (g == null) continue;
+        if (l.sicura) {
+          perSigla.putIfAbsent(l.sigla, () => []).add(g);
+        } else {
+          glifi[(k, j)] = g;
+        }
+      }
+    }
+    final forme = {
+      for (final e in perSigla.entries)
+        if (e.value.length >= 3)
+          e.key: [for (var i = 0; i < 192; i++) e.value.fold<double>(0, (a, g) => a + g[i]) / e.value.length],
+    };
+    glifi.forEach((pos, g) {
+      final lettera = celle[pos.$1][pos.$2].sigla[0];
+      String? meglio;
+      var dMeglio = double.infinity;
+      forme.forEach((s, f) {
+        if (s[0] != lettera) return;
+        var d = 0.0;
+        for (var i = 0; i < 192; i++) {
+          d += (g[i] - f[i]).abs();
+        }
+        if (d < dMeglio) {
+          dMeglio = d;
+          meglio = s;
+        }
+      });
+      if (meglio != null) celle[pos.$1][pos.$2] = Lettura(meglio!, false);
+    });
+  }
   return FoglioLetto(t.giorni, celle);
 }

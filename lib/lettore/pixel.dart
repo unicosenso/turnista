@@ -160,10 +160,14 @@ Contenuto guardaCasella(Immagine img, double cx0, double cy, double b, double hc
       .where((m) => !(m.w <= sottile || m.h <= sottile) && m.area >= 0.08 * hc * hc)
       .toList();
   if (macchie.isEmpty) return Contenuto.vuota;
+  bool alBordo(_Macchia m) => m.x0 == 0 || m.y0 == 0 || m.x1 >= r.w - 1 || m.y1 >= r.h - 1;
+  // Nelle foto a bassa risoluzione restano pezzetti delle linee della tabella: tratti che
+  // toccano il bordo del ritaglio o molto sottili. Non contano come lettere.
+  final vere = macchie.where((m) => !alBordo(m) && (m.w < m.h ? m.w : m.h) > 0.3 * hc).toList();
   // una "r": un segno solo, non tagliato dal bordo, alto poco meno di una maiuscola e stretto
-  if (macchie.length == 1) {
-    final m = macchie.first;
-    final bordo = m.x0 == 0 || m.y0 == 0 || m.x1 >= r.w - 1 || m.y1 >= r.h - 1;
+  if (vere.length == 1) {
+    final m = vere.first;
+    final bordo = alBordo(m);
     if (!bordo &&
         m.h >= 0.6 * hc && m.h <= 1.0 * hc &&
         m.w >= 0.3 * hc && m.w <= 0.65 * hc &&

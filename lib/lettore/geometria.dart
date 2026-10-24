@@ -247,8 +247,10 @@ List<List<double>> _seguiColonne(List<_Parola> cand, int ngiorni, double b) {
   }
   final tracce = <List<double>>[];
   final agganci = <List<double>, int>{};
+  final prese = <List<double>, Set<int>>{}; // le righe in cui la colonna ha davvero una sigla
   for (final seme in semi) {
     var presi = 1;
+    final righePrese = {seme.y.toInt()};
     final kSeme = seme.y.toInt();
     final traccia = List<double>.filled(ngiorni, 0);
     traccia[kSeme] = seme.x;
@@ -269,12 +271,14 @@ List<List<double>> _seguiColonne(List<_Parola> cand, int ngiorni, double b) {
           }
           traccia[k] = w.x0;
           presi++;
+          righePrese.add(k);
         } else {
           traccia[k] = prev;
         }
       }
     }
     agganci[traccia] = presi;
+    prese[traccia] = righePrese;
     tracce.add(traccia);
   }
   double media(List<double> t) => t.reduce((a, b) => a + b) / t.length;
@@ -299,6 +303,24 @@ List<List<double>> _seguiColonne(List<_Parola> cand, int ngiorni, double b) {
         uniche.removeAt(agganci[a]! >= agganci[c]! ? i + 1 : i);
         cambiato = true;
         break;
+      }
+    }
+  }
+  // Dove una colonna non ha agganciato sigle la sua x è solo stimata, e vicino ai bordi la
+  // stima può finire sulla colonna accanto. Si corregge con la distanza abituale dalla vicina.
+  for (var i = 0; i + 1 < uniche.length; i++) {
+    final a = uniche[i], c = uniche[i + 1];
+    final pa = prese[a]!, pc = prese[c]!;
+    final entrambe = [for (var k = 0; k < ngiorni; k++) if (pa.contains(k) && pc.contains(k)) k];
+    if (entrambe.length < 3) continue;
+    final passo = _mediana([for (final k in entrambe) c[k] - a[k]]);
+    for (var k = 0; k < ngiorni; k++) {
+      if ((c[k] - a[k] - passo).abs() > 0.4 * larg) {
+        if (!pc.contains(k)) {
+          c[k] = a[k] + passo;
+        } else if (!pa.contains(k)) {
+          a[k] = c[k] - passo;
+        }
       }
     }
   }
