@@ -1,0 +1,17 @@
+
+::group::✅ Passing tests
+✅ /home/runner/work/turnista/turnista/test/widget_test.dart: rotazione e sveglia
+✅ /home/runner/work/turnista/turnista/test/lettore_test.dart: sigle: correzioni tipiche
+✅ /home/runner/work/turnista/turnista/test/lettore_test.dart: foglio in bacheca (gennaio)
+✅ /home/runner/work/turnista/turnista/test/lettore_test.dart: foglio sul tavolo (settembre)
+✅ /home/runner/work/turnista/turnista/test/lettore_test.dart: foglio di agosto (prima riga senza data, sigle attaccate)
+✅ /home/runner/work/turnista/turnista/test/lettore_test.dart: agosto letto dal telefono (sigle spezzate, niente colonna fantasma)
+::endgroup::
+::group::✅ /home/runner/work/turnista/turnista/test/lettore_test.dart: agosto dal telefono, lettura completa coi pixel: nessuna casella sbagliata data per sicura
+agosto2 completo: sicure giuste 444 su 504, errori nascosti 0
+::endgroup::
+::group::✅ Passing tests
+✅ /home/runner/work/turnista/turnista/test/lettore_test.dart: pixel: riconosce una "r" e ignora le linee della tabella
+::endgroup::
+
+🎉 8 tests passed.
