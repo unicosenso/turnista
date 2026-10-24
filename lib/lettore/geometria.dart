@@ -16,8 +16,8 @@ class ParolaLetta {
 /// Una parola "di lavoro": centro, bordo sinistro e destro, e la riga a cui viene assegnata.
 class _Parola {
   String t;
-  final double x, y, x0;
-  double x1;
+  double x, x0, x1;
+  final double y;
   int? k; // indice del giorno (riga), null se non appartiene alla tabella
   bool unita = false;
   _Parola(this.t, this.x, this.y, this.x0, this.x1);
@@ -203,13 +203,22 @@ void _unisciSpezzate(List<_Parola> cand, double b) {
     for (var i = 0; i + 1 < riga.length; i++) {
       final a = riga[i], c = riga[i + 1];
       if (c.unita || c.x0 - a.x1 > 0.45 * b) continue;
-      final up = a.t.toUpperCase();
+      final up = a.t.toUpperCase(), cu = c.t.toUpperCase();
+      final pmn = up == 'P' || up == 'M' || up == 'N';
       if ((up.startsWith('INT') && c.t.replaceAll('.', '') == '2') ||
-          ((up == 'P' || up == 'M') && c.t.toUpperCase() == 'FF')) {
+          (pmn && (cu == 'FF' || cu == 'FE' || cu == 'EF'))) {
         a.t = a.t + c.t;
         a.x1 = c.x1;
         c.k = null;
         c.unita = true;
+      } else if (pmn && cu.length > 2 && (cu.startsWith('FF') || cu.startsWith('FE'))) {
+        // "FFN1": la seconda metà di PFF è attaccata alla sigla della colonna dopo
+        final taglio = c.x0 + (c.x1 - c.x0) * 2 / cu.length;
+        a.t = a.t + c.t.substring(0, 2);
+        a.x1 = taglio;
+        c.t = c.t.substring(2);
+        c.x0 = taglio;
+        c.x = (taglio + c.x1) / 2;
       }
     }
   }
@@ -237,7 +246,9 @@ List<List<double>> _seguiColonne(List<_Parola> cand, int ngiorni, double b) {
     }
   }
   final tracce = <List<double>>[];
+  final agganci = <List<double>, int>{};
   for (final seme in semi) {
+    var presi = 1;
     final kSeme = seme.y.toInt();
     final traccia = List<double>.filled(ngiorni, 0);
     traccia[kSeme] = seme.x;
@@ -257,11 +268,13 @@ List<List<double>> _seguiColonne(List<_Parola> cand, int ngiorni, double b) {
             pend = _clip(_retta(ult.map((p) => p.x).toList(), ult.map((p) => p.y).toList())[0], -15, 15);
           }
           traccia[k] = w.x0;
+          presi++;
         } else {
           traccia[k] = prev;
         }
       }
     }
+    agganci[traccia] = presi;
     tracce.add(traccia);
   }
   double media(List<double> t) => t.reduce((a, b) => a + b) / t.length;
@@ -271,6 +284,22 @@ List<List<double>> _seguiColonne(List<_Parola> cand, int ngiorni, double b) {
     if (uniche.isEmpty ||
         _mediana([for (var k = 0; k < ngiorni; k++) (t[k] - uniche.last[k]).abs()]) > 0.5 * larg) {
       uniche.add(t);
+    }
+  }
+  // Due colonne vere distano sempre circa una casella. Se due "colonne" stanno in media
+  // troppo vicine, una è fantasma (nata da un pezzo di sigla): si tiene quella
+  // che ha agganciato più sigle.
+  var cambiato = true;
+  while (cambiato && uniche.length > 1) {
+    cambiato = false;
+    for (var i = 0; i + 1 < uniche.length; i++) {
+      final a = uniche[i], c = uniche[i + 1];
+      final diff = [for (var k = 0; k < ngiorni; k++) (a[k] - c[k]).abs()];
+      if (_mediana(diff) < 0.7 * larg) {
+        uniche.removeAt(agganci[a]! >= agganci[c]! ? i + 1 : i);
+        cambiato = true;
+        break;
+      }
     }
   }
   return uniche;

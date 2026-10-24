@@ -7,7 +7,9 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as im;
 import 'package:turnista/lettore/geometria.dart';
+import 'package:turnista/lettore/lettore_foglio.dart' show leggiFoglio;
 import 'package:turnista/lettore/pixel.dart';
 import 'package:turnista/lettore/sigle.dart';
 
@@ -60,6 +62,36 @@ void main() {
   test('foglio in bacheca (gennaio)', () => confronta('bacheca'));
   test('foglio sul tavolo (settembre)', () => confronta('settembre'));
   test('foglio di agosto (prima riga senza data, sigle attaccate)', () => confronta('agosto'));
+  test('agosto letto dal telefono (sigle spezzate, niente colonna fantasma)', () => confronta('agosto2'));
+
+  test('agosto dal telefono, lettura completa coi pixel: nessuna casella sbagliata data per sicura', () {
+    // la foto vera, portata alle stesse misure su cui ML Kit ha letto le parole
+    final j = jsonDecode(File('test/fixtures/agosto2_parole.json').readAsStringSync());
+    var foto = im.decodeJpg(File('test/fixtures/agosto2_foto.jpg').readAsBytesSync())!;
+    foto = im.copyResize(foto, width: j['larghezza'] as int, height: j['altezza'] as int);
+    final img = Immagine(foto.width, foto.height, foto.convert(numChannels: 3).getBytes(order: im.ChannelOrder.rgb));
+    final f = leggiFoglio(caricaParole('agosto2'), img)!;
+    final verita = File('test/fixtures/agosto2_verita.txt').readAsLinesSync().map((r) => r.split(' ')).toList();
+    var sicureGiuste = 0, nascoste = 0;
+    for (var k = 0; k < f.giorni.length; k++) {
+      for (var c = 0; c < f.colonne; c++) {
+        final l = f.celle[k][c];
+        if (!l.sicura) continue;
+        if (l.sigla == verita[k][c]) {
+          sicureGiuste++;
+        } else {
+          nascoste++;
+          // ignore: avoid_print
+          print('errore nascosto giorno $k colonna ${c + 1}: letto ${l.sigla} vero ${verita[k][c]}');
+        }
+      }
+    }
+    // ignore: avoid_print
+    print('agosto2 completo: sicure giuste $sicureGiuste su ${f.totale}, errori nascosti $nascoste');
+    expect(f.colonne, 18);
+    expect(nascoste, 0);
+    expect(sicureGiuste, greaterThan(380));
+  });
 
   test('pixel: riconosce una "r" e ignora le linee della tabella', () {
     // Immagine finta 200x100 bianca, con una linea orizzontale e una "r" disegnata a mano.

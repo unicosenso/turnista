@@ -209,3 +209,33 @@ bool _eBlu(int r, int g, int b) {
   if (h < 0) h += 360;
   return h / 2 > 95 && h / 2 < 135;
 }
+
+/// Ritaglia l'ultima cifra della sigla (il "3" di "N3") e la riduce a un quadratino 12×16
+/// (192 valori tra 0 e 1), da confrontare con le altre cifre della stessa foto.
+List<double>? cifra(Immagine img, double cx0, double cy, double b, double hc) {
+  final larg = b * 1.05;
+  final r = _ritaglia(img, (cx0 - 0.15 * larg).toInt(), (cy - 0.45 * b).toInt(),
+      (cx0 + 0.85 * larg).toInt(), (cy + 0.45 * b).toInt());
+  if (r == null) return null;
+  final lettere = _macchie(r)
+      .where((m) => m.h >= 0.6 * hc && m.h <= 1.3 * hc && m.w >= 0.2 * hc && m.x0 > 0 && m.x1 < r.w - 1)
+      .toList();
+  if (lettere.length < 2) return null;
+  final m = lettere.reduce((a, c) => c.x0 > a.x0 ? c : a); // la più a destra
+  // Riduzione a 12×16: ogni quadratino è la media di 4×4 punti presi dentro la sua zona.
+  final out = <double>[];
+  for (var oy = 0; oy < 16; oy++) {
+    for (var ox = 0; ox < 12; ox++) {
+      var s = 0;
+      for (var sy = 0; sy < 4; sy++) {
+        for (var sx = 0; sx < 4; sx++) {
+          final x = m.x0 + ((ox + (sx + 0.5) / 4) * m.w / 12).floor();
+          final y = m.y0 + ((oy + (sy + 0.5) / 4) * m.h / 16).floor();
+          if (r.at(x, y)) s++;
+        }
+      }
+      out.add(s / 16);
+    }
+  }
+  return out;
+}

@@ -43,7 +43,57 @@ FoglioLetto? leggiFoglio(List<ParolaLetta> parole, Immagine img) {
     celle.add(riga);
   }
 
-  // 2) Correzioni a penna: una casella con molto più inchiostro del solito per quella sigla,
+  // 2) Cifre confuse da ML Kit (capita che legga "N2" dove c'è "N3"): si ritaglia l'ultima
+  // cifra di ogni sigla e la si confronta con la "cifra media" di ogni numero nella stessa foto.
+  // Se somiglia molto di più a un altro numero, si propone quello, ma come da controllare.
+  if (hc > 0) {
+    final reSigla = RegExp(r'^[MPN][0-3]$');
+    final glifi = <(int, int), List<double>>{};
+    final perCifra = <String, List<List<double>>>{};
+    for (var k = 0; k < t.giorni.length; k++) {
+      for (var j = 0; j < t.colonne; j++) {
+        final l = celle[k][j];
+        if (!l.sicura || !reSigla.hasMatch(l.sigla)) continue;
+        final cx0 = t.colonneX[j][k];
+        final g = cifra(img, cx0, t.rigaY(k, cx0 + 0.3 * b), b, hc);
+        if (g == null) continue;
+        glifi[(k, j)] = g;
+        perCifra.putIfAbsent(l.sigla[1], () => []).add(g);
+      }
+    }
+    final modelli = <String, List<double>>{
+      for (final e in perCifra.entries)
+        if (e.value.length >= 3)
+          e.key: [for (var i = 0; i < 192; i++) e.value.fold<double>(0, (a, g) => a + g[i]) / e.value.length],
+    };
+    double distanza(List<double> a, List<double> c) {
+      var s = 0.0;
+      for (var i = 0; i < 192; i++) {
+        s += (a[i] - c[i]).abs();
+      }
+      return s / 192;
+    }
+    glifi.forEach((pos, g) {
+      final l = celle[pos.$1][pos.$2];
+      final mia = modelli[l.sigla[1]];
+      if (mia == null) return;
+      final dMia = distanza(g, mia);
+      String? meglio;
+      var dMeglio = dMia;
+      for (final e in modelli.entries) {
+        final d = distanza(g, e.value);
+        if (d < dMeglio) {
+          dMeglio = d;
+          meglio = e.key;
+        }
+      }
+      if (meglio != null && dMeglio < 0.85 * dMia) {
+        celle[pos.$1][pos.$2] = Lettura(l.sigla[0] + meglio, false);
+      }
+    });
+  }
+
+  // 3) Correzioni a penna: una casella con molto più inchiostro del solito per quella sigla,
   // o con inchiostro blu, diventa "da controllare" anche se la sigla stampata è stata letta.
   if (hc > 0) {
     final misure = <(int, int), ({int totale, int blu})>{};
